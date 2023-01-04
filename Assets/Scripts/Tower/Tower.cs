@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 public class Tower : MonoBehaviour
 {
@@ -18,6 +15,7 @@ public class Tower : MonoBehaviour
     [SerializeField] private float turnSpeed;
     [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private Transform firePoint;
+    [SerializeField] private AudioSource audioSource;
 
     [Header("Attributes")]
 
@@ -25,15 +23,29 @@ public class Tower : MonoBehaviour
     [SerializeField] private float range;
     [SerializeField] private float damage;
     [SerializeField] private float fireCoolDown;
-    
+    [SerializeField] private float slowEffect;
+    [SerializeField] private float slowDuration;
+    [SerializeField] private float aoeMod;
 
+    private int level;
     private Enemy target;
     private float fireCountdown;
+    [SerializeField] private int totalCost;
 
     // Start is called before the first frame update
     void Start()
     {
-        InvokeRepeating("UpdateTarget", 0f, 0.5f);
+        if(type == TowerType.B_Cannon)
+        {
+            InvokeRepeating("UpdateFurthestTarget", 0f, 0.5f);
+        }
+
+        else
+        {
+            InvokeRepeating("UpdateTarget", 0f, 0.5f);
+        }
+
+        level = 1;
         fireCountdown = 0f;
     }
 
@@ -62,6 +74,7 @@ public class Tower : MonoBehaviour
     private void UpdateTarget()
     {
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+
         float shortestDistance = Mathf.Infinity;
         GameObject nearestEnemy = null;
 
@@ -82,6 +95,30 @@ public class Tower : MonoBehaviour
         }
     }
 
+    private void UpdateFurthestTarget()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+
+        float furthestDistance = 0;
+        GameObject furthestEnemy = null;
+
+        foreach (GameObject enemy in enemies)
+        {
+            float distanceToEnemy = Vector3.Distance(transform.position, enemy.transform.position);
+
+            if (distanceToEnemy > furthestDistance && distanceToEnemy <= range)
+            {
+                furthestDistance = distanceToEnemy;
+                furthestEnemy = enemy;
+            }
+        }
+
+        if (furthestEnemy != null)
+        {
+            target = furthestEnemy.GetComponent<Enemy>();
+        }
+    }
+
     private void Shoot()
     {
         GameObject bulletObject = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
@@ -89,8 +126,103 @@ public class Tower : MonoBehaviour
 
         if (bullet != null)
         {
-            bullet.Seek(target, damage, type);
+            bullet.Seek(target, this);
         }
+
+        ShootSFX();
+    }
+
+    private void ShootSFX()
+    {
+        switch (type)
+        {
+            case TowerType.A_Turret:
+                SoundManager.Instance.Play(audioSource, SoundManager.Sound.turretA);
+                break;
+            case TowerType.B_Cannon:
+                SoundManager.Instance.Play(audioSource, SoundManager.Sound.turretB);
+                break;
+            case TowerType.C_Slow:
+                SoundManager.Instance.Play(audioSource, SoundManager.Sound.turretC);
+                break;
+        }
+    }
+
+    public void LevelUp()
+    {
+        level++;
+        damage++;
+
+        if (level == 3)
+        {
+            range++;
+        }
+
+        else if (level == 5)
+        {
+            switch (type)
+            {
+                case TowerType.A_Turret:
+                    fireCoolDown -= 0.1f;
+                    break;
+                case TowerType.B_Cannon:
+                    aoeMod = 100;
+                    break;
+                case TowerType.C_Slow:
+                    slowDuration += 1;
+                    break;
+            }
+        }
+    }
+
+    public void Addprice(int cost)
+    {
+        totalCost += cost;
+    }
+
+    public TowerType GetTowerType()
+    {
+        return type;
+    }
+
+    public int GetLvl()
+    {
+        return level;
+    }
+
+    public float GetAtk()
+    {
+        return damage;
+    }
+
+    public float GetAtkSpd()
+    {
+        return fireCoolDown;
+    }
+
+    public float GetRange()
+    {
+        return range;
+    }
+
+    public float GetAOEMod()
+    {
+        return aoeMod;
+    }
+
+    public float GetSlowEffect()
+    {
+        return slowEffect;
+    }
+
+    public float GetSlowDuration()
+    {
+        return slowDuration;
+    }
+
+    public int GetCost()
+    {
+        return totalCost;
     }
 
     private void OnDrawGizmosSelected()

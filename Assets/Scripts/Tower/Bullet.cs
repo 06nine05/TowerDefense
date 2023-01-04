@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Bullet : MonoBehaviour
@@ -8,8 +6,7 @@ public class Bullet : MonoBehaviour
     [SerializeField] private float speed;
 
     private Enemy target;
-    private float atk;
-    private Tower.TowerType bulletType;
+    private Tower tower;
 
     // Update is called once per frame
     void Update()
@@ -30,22 +27,20 @@ public class Bullet : MonoBehaviour
         }
 
         transform.Translate(dir.normalized * distance, Space.World);
-
     }
 
-    public void Seek(Enemy _target, float damage, Tower.TowerType type)
+    public void Seek(Enemy _target, Tower _tower)
     {
         target = _target;
-        atk = damage;
-        bulletType = type;
+        tower = _tower;
     }
 
     private void Hit()
     {
-        switch (bulletType)
+        switch (tower.GetTowerType())
         {
             case Tower.TowerType.A_Turret:
-                target.TakeDamage(atk, bulletType);
+                target.TakeDamage(tower.GetAtk(), tower.GetTowerType());
                 break;
             case Tower.TowerType.B_Cannon:
                 GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
@@ -58,15 +53,15 @@ public class Bullet : MonoBehaviour
 
                         if (distanceToEnemy <= 1f)
                         {
-                            enemy.GetComponent<Enemy>().TakeDamage(atk * 80 / 100, bulletType);
+                            enemy.GetComponent<Enemy>().TakeDamage(tower.GetAtk() * tower.GetAOEMod() / 100, tower.GetTowerType());
                         }
                     }
                 }
-                target.TakeDamage(atk, bulletType);
+                target.TakeDamage(tower.GetAtk(), tower.GetTowerType());
                 break;
             case Tower.TowerType.C_Slow:
-                target.Slow(35,1f);
-                target.TakeDamage(atk, bulletType);
+                target.Slow(tower.GetSlowEffect(),tower.GetSlowDuration());
+                target.TakeDamage(tower.GetAtk(), tower.GetTowerType());
                 break;
         }
 

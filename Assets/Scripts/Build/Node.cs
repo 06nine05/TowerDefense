@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class Node : MonoBehaviour
 {
@@ -23,14 +24,19 @@ public class Node : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (!buildManager.CanBuild)
+        if (EventSystem.current.IsPointerOverGameObject())
         {
             return;
         }
 
         if (tower != null)
         {
-            Debug.Log("Can't build there");
+            buildManager.SelectNode(this);
+            return;
+        }
+
+        if (!buildManager.CanBuild)
+        {
             return;
         }
 
@@ -39,6 +45,11 @@ public class Node : MonoBehaviour
 
     private void OnMouseEnter()
     {
+        if (EventSystem.current.IsPointerOverGameObject())
+        {
+            return;
+        }
+
         if (!buildManager.CanBuild)
         {
             return;
@@ -49,7 +60,6 @@ public class Node : MonoBehaviour
 
     private void OnMouseExit()
     {
-        Debug.Log("Exit");
         hover.SetActive(false);
     }
 }
